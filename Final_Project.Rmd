@@ -200,7 +200,85 @@ Now that we have the top coded data of income, lets analyze how is ditributed wi
 
 --Industry based
 ```{r}
-ggplot(survey.data, aes(y=income, x=industry, fill=gender)) + geom_bar(position="dodge", stat="identity") + theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1)) + ylab("Income($)") + xlab("Industry") + ggtitle("Income by Gender Industry")
+  ggplot(survey.data, aes(y=income, x=industry, fill=gender)) + geom_bar(position="dodge", stat="identity") + theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1)) + ylab("Income($)") + xlab("Industry") + ggtitle("Income by Gender Industry")
+    
+  
+  aggregate(income ~ gender + industry, FUN=function(x){round(mean(x), 0)}, data=survey.data)
+
 ```
+
+
+--Education
+
+```{r}
+  library(MASS)
+  library(reshape2)
+  with(survey.data, tapply(income, INDEX = list(college.type, gender), FUN = function(x){mean(x, na.rm = TRUE)}))
+
+  education.summary <- with(survey.data, aggregate(income ~ gender + college.type, FUN = function(x){mean(x, na.rm = TRUE)}))
+  
+  education.summary <- education.summary[which(education.summary$college.type %in% c("Private/Non-Profit", "Private/Profit", "Public")),]
+  
+  
+  education.summary.plot <- ggplot(data = education.summary, aes(y = income, x = college.type, fill = gender)) 
+  education.summary.plot + geom_bar(stat = "identity", position = "dodge") +
+  ylab("Average income") + 
+  xlab("College Type") +
+  guides(fill = guide_legend(title = "Gender"))
+  
+```
+
+
+-- household.size
+
+```{r}
+
+  
+  
+  
+qplot(income,household.size,data = survey.data, color = gender, facets = gender)
+ggplot(survey.data, aes(x=household.size, y=income, shape=gender, color=gender)) + 
+  geom_point() + # Adds points (scatterplot)
+  geom_smooth(method = "lm") + # Adds regression lines
+  ylab("Income") + # Changes y-axis label
+  xlab("HouseHold Size") + # Changes x-axis label
+  ggtitle("Income with Gender and Size of the Household") # Changes plot title  
+
+```
+
+
+- race
+
+```{r}
+race.pay.gap <- ddply(survey.data, ~ race, summarize, mean.gap = mean(income[gender == "Male"], na.rm = TRUE) - mean(income[gender == "Female"], na.rm = T), median.gap = median(income[gender == "Male"], na.rm = TRUE) - median(income[gender == "Female"], na.rm = T))
+
+
+
+
+
+
+```
+
+
+
+- spouse.income.last.year
+
+
+
+- gross.family.income
+
+
+- college.type
+
+
+
+
+
+
+
+
+
+
+
 
 
