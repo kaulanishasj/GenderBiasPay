@@ -94,8 +94,8 @@ It is possible to study the data in its current form, however, pre-processing th
 Below is how we give meaningful data values to the columns that can make our data visualization better.
 
 ```{r}
-
-survey.data <- transform(survey.data, gender = as.factor(mapvalues(gender, c(1,2,0), c("Male","Female", "No Information"))),race = as.factor(mapvalues(race, c(1,2,3,4), c("Black", "Hispanic","Mixed Race (Non-Hispanic)", "Non-Black /Non-Hispanic"))), college.type = as.factor(mapvalues(college.type,c(1,2,3, -3, -4, -5), c("Public", "Private/Non-Profit", "Private/Profit", "Invalid Skip", "Valid Skip", "Non-Interview"))))
+library(plyr)
+survey.data <- transform(survey.data, gender = as.factor(mapvalues(gender, c(1,2,0), c("Male","Female", "No Information"))), race = as.factor(mapvalues(race, c(1,2,3,4), c("Black", "Hispanic","Mixed Race (Non-Hispanic)", "Non-Black /Non-Hispanic"))), college.type = as.factor(mapvalues(college.type,c(1,2,3, -3, -4, -5), c("Public", "Private/Non-Profit", "Private/Profit", "Invalid Skip", "Valid Skip", "Non-Interview"))))
 
 unique(survey.data$race)
 unique(survey.data$gender)
@@ -106,16 +106,39 @@ str(survey.data)
 
 We notice that industry also consists of integer factors, where the industry should actually be a category.
 
+```{r}
+#convert integer intervals into Categorical refrences
+survey.data$industry[survey.data$industry %in% 170:290] <- "AGRICULTURE, FORESTRY AND FISHERIES"
+survey.data$industry[survey.data$industry %in% 370:490] <- "MINING"
+survey.data$industry[survey.data$industry %in% 570:690] <- "UTILITIES"
+survey.data$industry[survey.data$industry == 770] <- "CONSTRUCTION"
+survey.data$industry[survey.data$industry %in% 1070:3990] <- "MANUFACTURING"
+survey.data$industry[survey.data$industry %in% 4070:4590] <- "WHOLESALE TRADE"
+survey.data$industry[survey.data$industry %in% 4670:5790] <- "RETAIL TRADE"
+survey.data$industry[survey.data$industry %in% 5890] <- "ARTS, ENTERTAINMENT AND RECREATIONAL SERVICES"
+survey.data$industry[survey.data$industry %in% 6070:6390] <- "TRANSPORTATION AND WAREHOUSING"
+survey.data$industry[survey.data$industry %in% 6470:6780] <- "INFORMATION AND COMMUNICATION"
+survey.data$industry[survey.data$industry %in% 6870:7190] <- "FINANCE, INSURANCE, AND REAL ESTATE"
+survey.data$industry[survey.data$industry %in% 7270:7790] <- "PROFESSIONAL AND RELATED SERVICES"
+survey.data$industry[survey.data$industry %in% 7860:8470] <- "EDUCATIONAL, HEALTH, AND SOCIAL SERVICES"
+survey.data$industry[survey.data$industry %in% 8560:8690] <- "ENTERTAINMENT, ACCOMODATIONS, AND FOOD SERVICES"
+survey.data$industry[survey.data$industry %in% 8770:9290] <- "OTHER SERVICES"
+survey.data$industry[survey.data$industry %in% 9370:9590] <- "PUBLIC ADMINISTRATION"
+survey.data$industry[survey.data$industry %in% 9670:9890] <- "ACTIVE DUTY MILITARY"
+survey.data$industry[survey.data$industry %in% 9950:9990] <- "ACS SPECIAL CODES"
+unique(survey.data$industry)
 
-
-
-
-
-
+#convert negative integers references to meaningful references from the data-dictionary
+survey.data <- transform(survey.data, industry = as.factor(mapvalues(industry, c("-3","-4","-5"), c("INVALID SKIP","VALID SKIP", "NON-INTERVIEW"))))
+```
 
 ### Deriving Non-Noisy, Categorical Data from Integer Data
 
-For the negative values that we had for the Categorical data, leaving behind a negative integer would not make a big difference would would look absurd while comparing other 'wordly' categories with numbers. However, in the case of continous data, negative number will not only look absurb for variable from income and household size, but will also skew the data.
+For the negative values that we had for the Categorical data, leaving behind a negative integer would not make a big difference would would look absurd while comparing other 'wordly' categories with numbers. However, in the case of continous data, negative number will not only look absurb for variable from income and household size, but will also skew the data. 
+
+Option 1: For the purposes of our analysis, we will convert the missing or the negative numbers from the continuous variables as NA.
+
+Option 2: We can also replace the data with a value that is the median value for the that variable column.
 
 
 
