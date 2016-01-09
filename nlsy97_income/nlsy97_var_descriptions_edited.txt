@@ -1,0 +1,72 @@
+
+
+
+Ref.Num  | Year |  Variable Description                                              |        Question Name              
+:-------:|:----:|:------------------------------------------------------------------:|:-----------------------------------
+E80431.00 | XRND | TOTAL NUMBER OF INCARCERATIONS                                            | INCARC_TOTNUM              
+E80432.00 | XRND | AGE AT FIRST INCARCERATION                                                | INCARC_AGE_FIRST           
+E80434.00 | XRND | LENGTH OF LONGEST INCARCERATION                                           | INCARC_LENGTH_LONGEST      
+R00001.00 | 1997 | PUBID, YOUTH CASE IDENTIFICATION CODE                                     | PUBID                      
+R00694.00 | 1997 | TEACHERS GOOD (AGREE/DISAGREE)                                            | YSCH-36400                 
+R00700.00 | 1997 | FEEL SAFE AT SCHOOL AGREE/DISAGREE                                        | YSCH-37000                 
+R03239.00 | 1997 | # DAYS PER WEEK TYPICALLY FAMILY DOES SOMETHING RELIGIOUS                 | YSAQ-010                   
+R05135.00 | 1997 | PERCENT CHANCE GET FLU NEXT YEAR                                          | YEXP-300                   
+R05147.00 | 1997 | PERCENT CHANCE R HAS HIGH SCHOOL DIPLOMA BY 20 YEARS OLD                  | YEXP-1500                  
+R05148.00 | 1997 | PERCENT CHANCE R IN JAIL BY 20 YEARS OLD                                  | YEXP-1600                  
+R05149.00 | 1997 | PERCENT CHANCE R A PARENT BY 20 YEARS OLD                                 | YEXP-1800                  
+R05151.00 | 1997 | PERCENT CHANCE R HAS COLLEGE DEGREE BY 30 YEARS OLD                       | YEXP-2000                  
+R05363.00 | 1997 | KEY!SEX, RS GENDER (SYMBOL)                                               | KEY!SEX                    
+R05364.01 | 1997 | KEY!BDATE, RS BIRTHDATE MONTH/YEAR (SYMBOL)                               | KEY!BDATE_M                
+R05364.02 | 1997 | KEY!BDATE, RS BIRTHDATE MONTH/YEAR (SYMBOL)                               | KEY!BDATE_Y                
+R06813.00 | 1997 | R HAVE PHYSICAL, EMOTIONAL CONDITION LIMITS SCHOOL/WORK?                  | PC9-002                    
+R06908.00 | 1997 | R UNHAPPY, SAD, DEPRESSED (FEMALE)                                        | PC12-024                   
+R06912.00 | 1997 | R UNHAPPY, SAD, DEPRESSED (MALE)                                          | PC12-028                   
+R12014.00 | 1997 | RS CURRENT ENROLLMENT STATUS                                              | CV_ENROLLSTAT              
+R12047.00 | 1997 | NET WORTH OF HOUSEHOLD ACCORDING TO PARENT                                | CV_HH_NET_WORTH_P          
+R12358.00 | 1997 | SAMPLE TYPE.  CROSS-SECTIONAL OR OVERSAMPLE                               | CV_SAMPLE_TYPE             
+R14826.00 | 1997 | KEY!RACE_ETHNICITY, COMBINED RACE AND ETHNICITY (SYMBOL)                  | KEY!RACE_ETHNICITY         
+R17005.00 | 1998 | GRADES R RECEIVED IN 8TH GRADE                                            | YSCH-6800                  
+R17011.00 | 1998 | GRADES R RECEIVED IN HIGH SCHOOL                                          | YSCH-7300                  
+R21915.00 | 1998 | R EVER USE COCAINE/HARD DRUGS?                                            | YSAQ-372B                  
+R49085.00 | 2000 | # DAYS USE MARIJUANA IN LAST 30 DAYS?                                     | YSAQ-371                   
+S09200.00 | 2002 | R IS DISORGANIZED OR ORGANIZED                                            | YSAQ-282J                  
+S09207.00 | 2002 | R IS TRUSTFUL OR DISTRUSTFUL                                              | YSAQ-282Q                  
+S20116.00 | 2003 | NET WORTH OF HOUSEHOLD ACCORDING TO R                                     | CV_HH_NET_WORTH_Y          
+S46772.00 | 2004 | R'S WEIGHT - POUNDS                                                       | YSAQ-000B                  
+S46858.00 | 2004 | R DESCRIBE WEIGHT                                                         | YSAQ-373                   
+T10691.00 | 2007 | PERSONAL RESPONSIBILITY QUESTIONS - PEOPLE SHOULD HELP LESS FORTUNATE     | YTEL-52~000001             
+T10691.01 | 2007 | PERSONAL RESPONSIBILITY QUESTIONS - PEOPLE SHOULD TAKE CARE OF THEMSELVES | YTEL-52~000002             
+T10691.02 | 2007 | PERSONAL RESPONSIBILITY QUESTIONS - HELPING PEOPLE IS IMPORTANT TO R      | YTEL-52~000003             
+T10691.03 | 2007 | PERSONAL RESPONSIBILITY QUESTIONS -  PEOPLE NEED TO LOOK AFTER THEMSELVES | YTEL-52~000004             
+T66501.00 | 2011 | COLLEGE 01 PUBLIC OR PRIVATE                                              | CV_COLLEGE_TYPE.01         
+T66567.00 | 2011 | GROSS FAMILY INCOME                                                       | CV_INCOME_FAMILY           
+T66569.00 | 2011 | HOUSEHOLD SIZE                                                            | CV_HH_SIZE                 
+T66570.00 | 2011 | NUMBER OF HOUSEHOLD MEMBERS UNDER AGE 18                                  | CV_HH_UNDER_18             
+T66571.00 | 2011 | NUMBER OF HOUSEHOLD MEMBERS UNDER AGE 6                                   | CV_HH_UNDER_6              
+T66573.00 | 2011 | HIGHEST DEGREE RECEIVED PRIOR TO THE 11/12 ACAD YEAR                      | CV_HIGHEST_DEGREE_1112     
+T66629.00 | 2011 | RS COLLAPSED MARITAL STATUS                                               | CV_MARSTAT_COLLAPSED       
+T67670.00 | 2011 | WHAT IS CURRENT HIGHEST GRADE EVER COMPLETED?                             | YSCH-3112                  
+T75454.00 | 2011 | R RECEIVE INCOME FROM JOB IN PAST YEAR?                                   | YINC-1400                  
+T75456.00 | 2011 | TOTAL INCOME FROM WAGES AND SALARY IN PAST YEAR                           | YINC-1700                  
+T75465.00 | 2011 | SPOUSE RECEIVE ANY INCOME FROM A JOB IN PAST YEAR?                        | YINC-2400                  
+T75469.00 | 2011 | SPOUSES TOTAL INCOME FROM WAGES AND SALARY PAST YEAR                      | YINC-2600                  
+T75470.00 | 2011 | ESTIMATED SPOUSES TOTAL INCOME FROM WAGES AND SALARY PAST YEAR            | YINC-2700                  
+T76356.00 | 2011 | R'S HEIGHT - FEET                                                         | YSAQ-000A000001            
+T76357.00 | 2011 | R'S HEIGHT - INCHES                                                       | YSAQ-000A000002            
+T76358.00 | 2011 | R'S WEIGHT - POUNDS                                                       | YSAQ-000B                  
+T76388.00 | 2011 | HAS R SMOKED SINCE DLI?                                                   | YSAQ-360C                  
+T76392.00 | 2011 | HAS R DRANK SINCE DLI?                                                    | YSAQ-364D                  
+T76398.00 | 2011 | # DAYS USE MARIJUANA IN LAST 30 DAYS?                                     | YSAQ-371                   
+T76400.00 | 2011 | HAS R USED COCAINE/HARD DRUGS SINCE DLI?                                  | YSAQ-372CC                 
+T76403.00 | 2011 | R DESCRIBE WEIGHT                                                         | YSAQ-373                   
+T76404.00 | 2011 | WHAT R DO ABOUT WEIGHT                                                    | YSAQ-374                   
+T77116.00 | 2011 | HEALTH AGE 29: RS ENERGY LEVEL DURING PAST FOUR WEEKS                     | YHEA29-285                 
+T77311.00 | 2011 | YEMP, TYPE OF BUS OR INDUSTRY CODE (2002 CENSUS 4-DIGIT) 01 (ROS ITEM)    | YEMP_INDCODE-2002.01       
+Z90337.00 | XRND | HIGHEST SAT MATH SCORE 2007                                               | CVC_SAT_MATH_SCORE_2007    
+Z90339.00 | XRND | HIGHEST SAT VERBAL SCORE 2007                                             | CVC_SAT_VERBAL_SCORE_2007  
+Z90341.00 | XRND | HIGHEST ACT SCORE 2007                                                    | CVC_ACT_SCORE_2007         
+Z90501.00 | XRND | DEBT AT AGE 20                                                            | CVC_ASSETS_DEBTS_20        
+Z90505.00 | XRND | # EMPLOYEE-TYPE JOBS FROM AGE 14 THROUGH AGE 19                           | CVC_TTL_JOB_TEEN           
+Z90506.00 | XRND | # EMPLOYEE-TYPE JOBS R HAS HELD FROM AGE 20                               | CVC_TTL_JOB_ADULT_ET       
+Z90507.00 | XRND | # JOBS R HAS HELD FROM AGE 20                                             | CVC_TTL_JOB_ADULT_ALL      
+Z91225.00 | XRND | DEBT AT AGE 30                                                            | CVC_ASSETS_DEBTS_30        
