@@ -138,26 +138,22 @@ For the negative values that we had for the Categorical data, leaving behind a n
 
 Option 1: For the purposes of our analysis, we will convert the missing or the negative numbers from the continuous variables as NA.
 
-Option 2: We can also replace the data with a value that is the median value for the that variable column.
+Option 2: We can also replace the data with a value that is the median value for the that variable column. But, in my opinion this has the power to skew the data even more.
 
+So, going with the first option:
 
-
-
+```{r}
 negative.to.na <- c("household.size", "spouse.income.last.year", "gross.family.income", "income")
-industry needs to be factored
+for(i in 1:length(negative.to.na)){
+  survey.data[["household.size"]][which(survey.data[["household.size"]] < 0)] <- NA
+}
+```
 
 
 
+### Top-Coded Values
 
-
-
-
-
-
-
-### Problem 1: Deriving Categorical Data from Integer Data
-
-
+Top-Coded values can be dangerous or not so depending how we utilize them. Top Coded data, obviously skews the top layer of data, because then we do not have information about the top values of the variate
 
 
 
