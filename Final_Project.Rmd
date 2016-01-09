@@ -184,32 +184,23 @@ Now that we have the top coded data of income, lets analyze how is ditributed wi
                    main = "Income by Gender", 
                    xlab = "Gender", 
                    ylab = "Income($)"))
+
+  survey.data <- transform(survey.data, age = 1997 - survey.data$bdate.year)
  
+  ggplot(survey.data, aes(x=age, y=income, shape=gender, color=gender)) + 
+  geom_point() + # Adds points (scatterplot)
+  geom_smooth(method = "lm") + # Adds regression lines
+  ylab("Income($)") + # Changes y-axis label
+  xlab("Age") + # Changes x-axis label
+  ggtitle("Income by Gender and Age") # Changes plot title
+
 ```
 
 
 
-
-
+--Industry based
 ```{r}
- survey.data <- transform(survey.data, age = 1997 - survey.data$bdate.year)
- 
- 
-  ggplot(birthwt, aes(x=mother.age, y=birthwt.grams, shape=mother.smokes, color=mother.smokes)) + 
-  geom_point() + # Adds points (scatterplot)
-  geom_smooth(method = "lm") + # Adds regression lines
-  ylab("Birth Weight (grams)") + # Changes y-axis label
-  xlab("Mother's Age (years)") + # Changes x-axis label
-  ggtitle("Birth Weight by Mother's Age") # Changes plot title
- 
- 
- 
- 
- 
- 
- 
- 
- 
+ggplot(survey.data, aes(y=income, x=industry, fill=gender)) + geom_bar(position="dodge", stat="identity") + theme(axis.text.x = element_text(angle = 60, vjust = 1, hjust = 1)) + ylab("Income($)") + xlab("Industry") + ggtitle("Income by Gender Industry")
 ```
 
 
