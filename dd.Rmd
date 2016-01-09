@@ -1,0 +1,959 @@
+---
+title: "Programming R for Analytics - Final Project"
+author: "Ankit Gupta"
+date: "October 11, 2015"
+output: 
+  html_document:
+    toc: true
+    toc_depth: 6
+    fig_width: 10
+    fig_height: 7
+---
+
+
+# Introduction
+
+The project aims to investigate if a significance difference exists between men and women. To analysis the question, the NLSY97 (National Longitudinal Survey of Youth, 1997 cohort) data set will be used. The data set consists of 67 variables including income and gender. Various hypothesis will be performed to check if there really exists a significance difference between income across gender.
+
+For certain section, we will also have a look at the R code responsible for data transformation or hypothesis tests as it will give us a more deeper understanding of the analysis being performed on the data.
+
+*It is important to note that although there may be appear significat correlations between a variable and income across gender, it doesn't necessarily imply a causal effect and therefore a multivariate model will be deisgned to check the effect of a particular variable in presence of different variables.*
+
+
+Before we commence the process, let's take a moment to understand the concept of the gender wage gap and various nunances associated with it.
+
+**Traditional meaning of gender wage gap**
+
+According to the European Commission gender wage gap has been defined as the average difference between men's and women's aggregate hourly earnings. It is generally suggested that the wage gap is due to a variety of causes, such as discrimination in hiring, differences in education choices, differences in salary negotiations, differences in the types of positions held by men and women, differences in the pay of jobs men typically go into as opposed to women (especially highly paid high risk jobs), differences in amount of work experience, difference in length of work week, and breaks in employment.
+
+(Source - https://en.wikipedia.org/wiki/Gender_pay_gap)
+
+
+**The '77 Cents on the Dollar' Myth**
+
+In recent times, various theories have emerged debunking the notion of wage descriminiation across gender. Various factors like number of hours, education, choice of jobs have been attributed in favour of the alternate theory.
+
+So to speak, our analysis will remain objective and neutral to both the theories and will explore both fronts.
+
+
+# 1. Data Summary
+
+```{r global_options, include=FALSE}
+knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
+options("scipen"=100, "digits"=4)
+
+library(plyr)
+library(ggplot2)
+library(knitr)
+library(reshape2)
+
+
+```
+
+
+Let's begin the analysis by loading the given dataset and perform an initial analysis of given variables.
+
+```{r}
+
+nlsy <- read.csv(paste(getwd(),"nlsy97_income/nlsy97_income.csv",sep = ""), header = TRUE)
+
+dim(nlsy)
+
+str(nlsy)
+
+```
+
+The given data set contains **`r ncol(nlsy)` columns** and **`r nrow(nlsy)` rows**. However, the column names does not convey meaning information about the values they contain. Let's assign meaninful column names to the data variables to reflect the nature of values they contain.
+
+
+```{r}
+
+colnames(nlsy) <- c("total.incarceration", "age.first.incarceration", "length.longest.incarceration", "pubid", "teacher.good", "feel.safe", "days.religious.activities", "perc.flu.next.year", "perc.diploma.by20", "perc.injail.by20", "perc.parent.by20", "perc.degree_by30", "gender", "bdate.month", "bdate.year", "has.condition", "is.sad.dep.f", "is.sad.dep.m", "enroll.status", "household.networth.p", "sample.type", "race", "grades.8th", "grades.highschool", "used.cocdrugs", "used.marj.30d", "is.organised", "is.trustful", "household.networth.r", "weight", "describe.weight.2004", "prq.help.less.fort", "prq.take.care", "prq.help.people", "prq.look.after", "college.type", "gross.family.income", "household.size", "hh.member.under18", "hh.member.under6", "highest.degree.before1112", "marital.status", "highest.grade", "is.income.past.year", "income", "is.spouse.income.past.year", "spouse.income.last.year", "est.spouse.income.last.year", "height.ft", "height.in", "weight.p", "has.smoked.dli", "has.drank.dli", "used.marij.30d", "used.drugs.dli", "describe.weight.2011", "do.about.weight", "energy.level.4weeks", "industry", "highest.sat.math.07", "highest.sat.verbal.07", "highest.act.07", "debt.at.20", "job.type.teen", "job.type.adult", "total.jobs.adult", "debt.at.30")
+
+str(nlsy)
+
+```
+
+
+With column names assigned to the data set, let's produce a summary of the complete data set. The summary table displays for every variable a set of descriptive statistics, depending on the type of the variable:
+
+For eg: for Numerical variables, the range, quartiles, median, and mean will be shown.
+
+for Factor variables, a table with frequencies with frequencies will be shown.
+
+for Numerical and factor variables both, the number of missing values will be shown, if there are any.
+
+for Character variables, the length and the class will be shown.
+
+```{r}
+
+summary(nlsy)
+
+```
+
+
+
+# 2. Methodology
+
+In this section we will walk through the entire process starting from data clean up till the model building.
+
+
+## Dealing with missing values
+
+From the descriptive statistics output, it appears that many variables have the negative values in them, which potentially introduce noise in the data analysis. We will treat all the variables depending on the category they fit in - Numeric or continuous variables, categorical variables or both. with each cateogory of variables, we will understand the meaning of negative values that they hold.
+
+## Handling continuous variables
+
+For all the variables selected as continuous, we will check and assign the values and if found less than 0, we will treat the negative values as NA. According variable description of NLSY data, there are potentially 5 negative values which have been considered as coded values -
+
+- Refusal(-1)
+- Don't Know(-2)
+- Invalid Skip(-3)
+- VALID SKIP(-4)
+- NON-INTERVIEW(-5)
+
+For our data analysis, these coded values can prove to add noise to the data, specially when our main variable under investigation "income" act as a continuous variable.
+
+To assign NA to negative values, a function has been designed, which will accept a character variable containing the variable names identified as continuous.
+The funtion will traverse through each the vector to check the respective elements assigns NA where ever it locates a negative value.
+
+```{r echo = T}
+
+# function to get column names with negative values
+
+#identify continuous variables
+nlsy.continuous.vec <- c("age.first.incarceration", "length.longest.incarceration", "pubid", "perc.flu.next.year", "perc.diploma.by20", "perc.injail.by20", "perc.parent.by20", "perc.degree_by30", "bdate.year", "household.size",  "used.marj.30d",  "weight",  "income", "height.ft", "height.in", "weight.p", "highest.sat.math.07", "highest.sat.verbal.07", "highest.act.07", "spouse.income.last.year")
+
+assignNaToContinuous <- function(x) {
+  
+  for(col in x){
+    
+    nlsy[[col]][nlsy[[col]] < 0] <- NA
+    
+  }
+  
+  return(nlsy)
+  
+}
+
+nlsy <- assignNaToContinuous(nlsy.continuous.vec)
+
+```
+
+
+## Dealing with categorical variables
+
+Although all the variables in data set are numeric in nature, a subset of them contain repeating values, indicating that they may represent categories. For eg: variables like gender, race and industry intuitively represent the meaning that they contain. These type of variables should not be left as numeric as doing so will not lead to significant inference. With the help of variables description file, we will assign codes to each reapeating value in a variable.
+
+```{r echo = T}
+# Transform nlsy vector variables
+
+nlsy <- transform(nlsy, 
+                  gender = mapvalues(gender, c(1, 2), c("male", "female")),
+                  race = mapvalues(race, 1:4, c("Black", "Hispanic", "Mixed", "Other")),
+                  has.condition = mapvalues(has.condition, from = 0:1, to = c("No", "Yes")),
+                  is.sad.dep.f = mapvalues(is.sad.dep.f, from = 0:2, to = c("Not True", "Sometimes True", "Often True")),
+                  is.sad.dep.m = mapvalues(is.sad.dep.m, from = 0:2, to = c("Not True", "Sometimes True", "Often True")),
+                  enroll.status = mapvalues(enroll.status, from = 1:11, to = c("Not enrolled, no high school degree, no GED",	"Not enrolled, GED",	"Not enrolled, high school degree",	"Not enrolled, some college",	"Not enrolled, 2-year college graduate",	"Not enrolled, 4-year college graduate",	"Not enrolled, graduate degree",	"Enrolled in grades 1-12, not a high school graduate",	"Enrolled in a 2-year college",	"Enrolled in a 4-year college",	"Enrolled in a graduate program")),
+                  sample.type = mapvalues(sample.type, from = 0:1, to = c("Oversample", "Cross-sectional")),
+                  grades.8th = mapvalues(grades.8th, from = 1:13, to = c("Mostly below Ds", "Mostly Ds", "About half Cs and half Ds", "Mostly Cs", "About half Bs and half Cs", "Mostly Bs", "About half As and Bs", "Mostly As", "Other (SPECIFY)", "A's to C's", "Mixed", "Ungraded", "Skipped 8th grade"
+)),
+                  grades.highschool = mapvalues(grades.highschool, from = 1:13, to = c("Mostly below Ds", "Mostly Ds", "About half Cs and half Ds", "Mostly Cs", "About half Bs and half Cs", "Mostly Bs", "About half As and Bs", "Mostly As", "Other (SPECIFY)", "A's to C's", "Mixed", "Ungraded", "Skipped 8th grade"
+)),
+                  used.cocdrugs = mapvalues(used.cocdrugs, from = 0:1, to = c("No", "Yes")),
+                  prq.help.less.fort = mapvalues(prq.help.less.fort, from = c(4,3,2,1,0), to = c("Strongly Agree", "Agree", "Neither Agree nor Disagree", "Disagree", "Strongly Disagree")),
+                  prq.take.care = mapvalues(prq.take.care, from = 4:0, to = c("Strongly Agree", "Agree", "Neither Agree nor Disagree",  "Disagree", "Strongly Disagree")),
+                  prq.help.people = mapvalues(prq.help.people, from = 4:0, to = c("Strongly Agree", "Agree", "Neither Agree nor Disagree",  "Disagree", "Strongly Disagree")),
+                  prq.look.after = mapvalues(prq.look.after, from = 4:0, to = c("Strongly Agree", "Agree", "Neither Agree nor Disagree",  "Disagree", "Strongly Disagree")),
+                  college.type = mapvalues(college.type, from = 1:3, to = c("Public institution", "Private not-for-profit institution", "Private for-profit institution")),
+                  highest.degree.before1112 = mapvalues(highest.degree.before1112, from = 0:7, to = c("None", "GED", "High school diploma (Regular 12 year program)", "Associate/Junior college (AA)", "Bachelor's degree (BA, BS)", "Master's degree (MA, MS)", "PhD", "Professional degree (DDS, JD, MD)")),
+                  marital.status = mapvalues(marital.status, from = 0:4, to = c("Never-married", "Married", "Separated", "Divorced", "Widowed")),
+                  highest.grade = mapvalues(highest.grade, from = c(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 95), to = c("NONE", "1ST GRADE", "2ND GRADE", "3RD GRADE", "4TH GRADE", "5TH GRADE", "6TH GRADE", "7TH GRADE", "8TH GRADE", "9TH GRADE", "10TH GRADE", "11TH GRADE", "12TH GRADE", "1ST YEAR COLLEGE", "2ND YEAR COLLEGE", "3RD YEAR COLLEGE", "4TH YEAR COLLEGE", "5TH YEAR COLLEGE", "6TH YEAR COLLEGE", "7TH YEAR COLLEGE", "8TH YEAR COLLEGE OR MORE", "UNGRADED")),
+                  is.income.past.year = mapvalues(is.income.past.year, from = 0:1, to = c("No", "Yes")),
+                  is.spouse.income.past.year = mapvalues(is.spouse.income.past.year, from = 0:1, to = c("No", "Yes")),
+                  has.smoked.dli = mapvalues(has.smoked.dli, from = 0:1, to = c("No", "Yes")),
+                  has.drank.dli = mapvalues(has.drank.dli, from = 0:1, to = c("No", "Yes")),
+                  used.drugs.dli = mapvalues(used.drugs.dli, from = 0:1, to = c("No", "Yes")),
+                  describe.weight.2011 = mapvalues(describe.weight.2011, from = 1:5, to = c("Very Underweight", "Slightly Underweight", "About the right weight", "Slightly Overweight", "Very Overweight")),
+                  energy.level.4weeks = mapvalues(energy.level.4weeks, from = 1:6, to = c("All of the time", "Most of the time", "A good bit of the time", "Some of the time", "A little of the time", "None of the time")),
+                  est.spouse.income.last.year = mapvalues(est.spouse.income.last.year, from = 1:7, to = c("$1 - $5,000", "$5,001 - $10,000", "$10,001 - $25,000", "$25,001 - $50,000", "$50,001 - $100,000", "$100,001 - $250,000", "More than $250,000"))
+                  )
+
+```
+
+
+## Dealing with complex variables
+
+There are certain variables which are both categorical and numeric in nature. To further elaborate on the statement, these variable are numeric by nature and contain numeric values, however, we can not treat all the negative values as NA since apart from the "coded" negative values, there are values which are legitimate as negative.
+
+One approach to handle these type of variables is by assigning the coded values -1, -2, -3, -4, -5 as NA and do not transform the remaining negative values. This will be achieved in the same way as we handled numeric variables.
+
+```{r echo = T}
+# handle complex variables
+nlsy.complex.continuous <- c("household.networth.p", "household.networth.r", "gross.family.income", "debt.at.20", "debt.at.30")
+
+handleComplexContinuous <- function(x){
+  
+  for(col in x){
+    
+    nlsy[[col]][nlsy[[col]] %in% c(-1, -2, -3, -4, -5)] <- NA
+    
+  }
+  
+  return(nlsy)
+  
+}
+
+
+nlsy <- handleComplexContinuous(nlsy.complex.continuous)
+
+```
+
+
+**INDUSTRY** variable contain many numberic values, but these values are considered to be codes, specific to particular industry. We will group the codes and assign appropriate industry codes to each group.
+
+
+```{r echo = T}
+
+# handle industry variable
+nlsy$industry[nlsy$industry %in% 170:290] <- "AGRICULTURE, FORESTRY AND FISHERIES"
+nlsy$industry[nlsy$industry %in% 370:490] <- "MINING"
+nlsy$industry[nlsy$industry %in% 570:690] <- "UTILITIES"
+nlsy$industry[nlsy$industry %in% 770] <- "CONSTRUCTION"
+nlsy$industry[nlsy$industry %in% 1070:3990] <- "MANUFACTURING"
+nlsy$industry[nlsy$industry %in% 4070:4590] <- "WHOLESALE TRADE"
+nlsy$industry[nlsy$industry %in% 4670:5790] <- "RETAIL TRADE"
+nlsy$industry[nlsy$industry %in% 5890] <- "ENTERTAINMENT & RECREATION SERVICES"
+nlsy$industry[nlsy$industry %in% 6070:6390] <- "TRANSPORTATION & WAREHOUSING"
+nlsy$industry[nlsy$industry %in% 6470:6780] <- "INFORMATION & COMMUNICATION"
+nlsy$industry[nlsy$industry %in% 6870:7190] <- "FINANCE, INSURACE & REAL ESTATE"
+nlsy$industry[nlsy$industry %in% 7270:7790] <- "PROFESSIONAL & RELATED SERVICES"
+nlsy$industry[nlsy$industry %in% 7860:8470] <- "EDUCATIONAL, HEALTH & SOCIAL SERVICES"
+nlsy$industry[nlsy$industry %in% 8560:8690] <- "ENTERTAINMENT, ACCOMODATIONS, AND FOOD SERVICES"
+nlsy$industry[nlsy$industry %in% 8770:9290] <- "OTHER SERVICES"
+nlsy$industry[nlsy$industry %in% 9370:9590] <- "PUBLIC ADMINISTRATION"
+nlsy$industry[nlsy$industry %in% 9670:9890] <- "ACTIVE DUTY MILITARY"
+nlsy$industry[nlsy$industry %in% 9950:9990] <- "ACS SPECIAL CODE"
+
+```
+
+
+```{r echo = T}
+# handle spouse estimated income
+nlsy$est.spouse.income.last.year[nlsy$est.spouse.income.last.year %in% c(-1,-2, -3, -4, -5)] <- "?"
+```
+
+The final step of data transformation involves factorizing categorical variables that we mapped earlier. Categorical variables will be used extensively in our analysis to differentiate income across gender in presence of a categorical variable. This is will give us a better perspective about the underlying notion of gender wage gap, if it exists.
+
+We will use a funtion to pass a vector of variable names in the function and factorize them.
+Also, let's create an age column for our analysis with the help of year of birth variable.
+
+
+```{r}
+
+# handle catagorical variables
+nlsy.factor.vec <- c("teacher.good", "feel.safe", "days.religious.activities", "gender", "bdate.month", "has.condition", "is.sad.dep.f", "is.sad.dep.m", "enroll.status", "sample.type", "race", "grades.8th", "grades.highschool", "used.cocdrugs", "is.organised", "is.trustful", "describe.weight.2004", "prq.help.less.fort", "prq.take.care", "prq.help.people", "prq.look.after", "college.type", "hh.member.under18", "hh.member.under6", "highest.degree.before1112", "marital.status", "highest.grade", "is.income.past.year", "is.spouse.income.past.year", "has.smoked.dli", "has.drank.dli", "used.marij.30d", "used.drugs.dli", "describe.weight.2011", "do.about.weight", "energy.level.4weeks", "industry", "total.jobs.adult")
+
+
+convertColtoFactor <- function(x){
+  
+  for(col in x){
+    
+    nlsy[[col]][nlsy[[col]] < 0] <- "?"
+    nlsy[[col]] <- as.factor(nlsy[[col]])
+    
+  }
+  
+  return(nlsy)
+  
+}
+
+
+nlsy <- convertColtoFactor(nlsy.factor.vec)
+
+```
+
+
+
+```{r}
+# creating age column
+
+nlsy <- transform(nlsy, age = 2011 - nlsy$bdate.year)
+
+```
+
+
+##Dealing with top coded values
+
+
+```{r}
+# nlsy without missing values in income
+nlsy <- nlsy[!is.na(nlsy$income),]
+```
+
+It is know through variable description file that income variable is topcode which means that the income of top 2% earners is not known, rather their income has been recorder as the average value of top 2% earner. Let's take a look at the income of top 2% earners.
+
+```{r}
+#subsetting data with top 2% income from nlsy
+topcoded.nlsy <- nlsy[nlsy$income == quantile(nlsy$income, probs = c(0.98), na.rm = T),]
+
+summary(topcoded.nlsy$income)
+
+```
+
+We observe that there is indeed a single income value for top 2% earners i.e. $146,000.
+
+With the help of a basic plot, let's analyse the count of males against females in the population of 2% earners.
+
+```{r}
+#count of males and females
+
+ggplot(topcoded.nlsy, aes(x = gender, fill=gender)) + 
+  geom_bar(stat = "bin") +
+  geom_text(stat='bin',aes(label=..count..),vjust=-1) +
+  ggtitle("Comparison of gender count amongst 2% earners")
+
+# we remove the topcoded subset from nlsy
+
+nlsy <- nlsy[nlsy$income != quantile(nlsy$income, probs = c(0.98), na.rm = T),]
+
+```
+
+**Takeaway** - A striking difference of 30 women against 90 men in top 2% earners. Top earners generally reflect employees with higher positions. This gives an initial impression that women may not be a natural choice for higher position, though it cannot be concluded cogently without further analysis.
+
+For our analysis, we will remove data pertaining to top 2% earners and their income values will skew the distribution and add much more to the variation than what is expected from a good model.
+
+
+## Trivial Variables
+
+During my analysis, entailed in subsequent Fining sections, I was expected Age and Education to provide significant findings and trends to indicate an association with difference in mean income across gender. Although, the variables do indicate a difference, however, but the differences are rather unexplained and require more coverage and data points along with other factors outside the scope of the given data set.
+
+## Potentially Significant relationships
+
+With data transformation complete, we begin our core analysis by identifying the subset of variables that will be considered for further investigation and model building.
+
+We will pick the variables that closesly resembles the factors discussed in Introduction section, effecting gender wage gap and the alternate theory. Following are the variables that serves as the starting point for analysis -
+
+- income - Income of inidividual
+- gender - Gender of individuals
+- industry - Type of Industry that the individual worked in
+- age - Age of individual
+- race - Race of individual
+- college.type - Type of college that the inidividual attended
+- enroll.status - Enrollment status of the individual
+- job.type.adult - No. of different types of jobs that individual held as adult
+- is.spouse.income.past.year - Did spouse of the individual receive income last year?
+- spouse.income.last.year - Income of spouse received last year
+- household.size - No. of members in family
+- hh.member.under6 - No. of members under age 6 in family
+- hh.member.under18 - No. of members under age 18 in family
+
+
+It is likely that not all variables listed above may contribute significantly in our analysis, which we are going to analyse individually using hypothesis tests and using a multi-variate model in the end. 
+
+In the following section, we will discuss all the listed variables in detail using table summaries and graphs and summarise the variable with the help of **Takeaway** or interpretation of the graphs.
+
+
+
+# 3. Findings
+
+## Variables of interests -
+
+
+### Gender
+
+```{r}
+
+# mean of income across gender
+with(nlsy, aggregate(income ~ gender, na.rm = T, FUN = mean))
+
+```
+
+There is a clear difference of average incomes across gender with men being paid appoximately $6,500 more than women.
+
+```{r}
+#comparison income quantiles across gender
+with(nlsy, aggregate(income ~ gender, na.rm = T, probs = seq(0,1, .1), FUN = quantile))
+
+```
+
+If we look at the quantile data of income across gender, we observe that the difference in income progressively increase from low earners to top earners and finally coverging to a maximum income value. The identical highest value could be in indicator of top earners in a given industry supporting the contention of alternate theory.
+
+```{r}
+
+custom.color <- c("darkred", "navyblue")
+
+ggplot(nlsy, aes(x=income, fill = gender)) + geom_histogram(binwidth = diff(range(nlsy$income))/30) +
+  ggtitle("Income distribution across gender")
+
+ggplot(nlsy, aes(income, fill = gender)) + geom_density(alpha = 0.5) +
+  ggtitle("Density plot of income across gender")
+
+```
+
+**Takeaway** The histogram of income distributions and density plots indicates a significant difference in income across genders. An interesting point to note here is that the difference is maximum at the mean and progressive converges untill at the tail of distributions.
+
+
+###Industry
+
+We will start with analysing mean difference in income between men and women and propotion of women across industries.
+
+```{r}
+
+# compare mean, median, income ratio across gender based on industry
+
+gap <- ddply(nlsy, ~ industry, summarize, 
+          mean.gap = mean(income[gender == "male"], na.rm = TRUE) - mean(income[gender == "female"], na.rm = T),
+          mean.ratio = round(mean(income[gender == "female"], na.rm = TRUE)/mean(income[gender == "male"],na.rm = TRUE),2),
+          proportion.female = round(length(gender[gender == "female"]) / (length(gender[gender == "female"]) + length(gender[gender == "male"])), 2)*100
+      )
+
+gap
+
+```
+
+Let's plot a bar graph to visually represent the figures for a better interpretation.
+
+```{r}
+ggplot(data = gap, aes(y = mean.gap, x = industry, fill = industry)) +
+  geom_bar(stat = "identity") +
+  ylab("Mean Difference") + 
+  xlab("Industry") +
+  ggtitle("Mean income difference across industries") +
+  guides(fill = guide_legend(title = "Gender")) + 
+  theme(text = element_text(size=10), axis.text.x = element_text(angle=90, vjust = 1))
+
+
+```
+
+**Takeaway** - By looking at the figures, it is clear that there is wage gap spread across industries. But makes it more interesting is the possibility of choice or a bias towards industry. 
+The mean.gap column in the figure represents mean income difference between men and women. 
+Mean.ratio represents amount earned by women in an industry per $1 earned by men. For instance mean ratio of .57 in Active Duty Military indicates that per $1 earned by men, women earn 57 cents.
+Proportion.female indicates percentage of females working in an industry according to sample data.
+
+The data suggests particularly for lowest mean.ratio values such as Active Duty Military, Mining where proportion of female is strikingly low, that there may be a biasness towards industry that women target to work in. It can be possible that women choose to work where hard labour is minimum. This is representative in data as well. Industries such as Educational, Health & Services and Information & Communication have significantly higher proportion of women and the mean ratio of income almost matches to that of men.
+
+Industry definitely has a strong association with wage gap.
+
+
+
+###Age
+
+We will start with analysing mean difference in income between men and women across age groups.
+
+```{r}
+
+# compare mean, median, income ratio across gender based on age
+
+
+gap <- ddply(nlsy, ~ age, summarize, 
+          mean.gap = mean(income[gender == "male"], na.rm = TRUE) - mean(income[gender == "female"], na.rm = T),
+          mean.ratio = round(mean(income[gender == "female"], na.rm = TRUE)/mean(income[gender == "male"],na.rm = TRUE),2)
+      )
+
+
+gap
+
+```
+
+Let's plot a bar graph to visually represent the figures for a better interpretation.
+
+```{r}
+ggplot(data = gap, aes(y = mean.gap, x = age, fill = age)) +
+  geom_bar(stat = "identity") +
+  ylab("Mean Difference") + 
+  xlab("Age") +
+  ggtitle("Mean income difference across Age") +
+  guides(fill = guide_legend(title = "Age")) + 
+  theme(text = element_text(size=10), axis.text.x = element_text(angle=90, vjust = 1))
+
+ggplot(nlsy, aes(gender, income)) + 
+  geom_boxplot(aes(fill = gender)) + facet_grid(.~age) +
+  theme(text = element_text(size=10), axis.text.x = element_text(angle=90, vjust = 1))
+
+```
+
+From the data and graphs, it appears that mean income difference exists, but there's not much variation in mean difference across age and averages at 83 cents for women per $1 dollar earned by men.
+
+```{r}
+
+ggplot(nlsy, aes(x=age, y=income, shape=gender, color=gender)) + 
+  geom_point() + # Adds points (scatterplot)
+  geom_smooth(method = "lm") + # Adds regression lines
+  ylab("Income") + # Changes y-axis label
+  xlab("Age") + # Changes x-axis label
+  ggtitle("Income across Age") # Changes plot title
+
+```
+
+**Takeaway** The above graph has an interesting interpretation that as age increases, the income of men can increase more than women at same age group level. This is indicative from the rise in slope for men against women.
+
+Age seems to have an association with wage gap.
+
+
+###Race
+
+We will start with analysing mean difference in income between men and women across age groups.
+
+```{r}
+
+# compare mean, median, income ratio across gender based on race
+
+gap.race <- with(nlsy, aggregate(income ~ gender + race, na.rm = T, FUN = mean))
+
+dcast(gap.race, gender ~ race, value.var="income")
+
+gap <- ddply(nlsy, ~ race, summarize, 
+          mean.gap = mean(income[gender == "male"], na.rm = TRUE) - mean(income[gender == "female"], na.rm = T),
+          median.gap = median(income[gender == "male"], na.rm = TRUE) - median(income[gender == "female"], na.rm = T),
+          mean.ratio = round(mean(income[gender == "female"], na.rm = TRUE)/mean(income[gender == "male"],na.rm = TRUE),2)
+      )
+
+gap
+
+```
+
+Let's plot a bar graph to visually represent the figures for a better interpretation.
+
+```{r}
+ggplot(data = gap, aes(y = mean.gap, x = race, fill = race)) +
+  geom_bar(stat = "identity") +
+  ylab("Mean Difference") + 
+  xlab("Race") +
+  ggtitle("Mean income difference across race") +
+  guides(fill = guide_legend(title = "Race")) + 
+  theme(text = element_text(size=10), axis.text.x = element_text(angle=90, vjust = 1))
+
+```
+
+**Takeaway** Race comes out as strong indicator of mean difference in incomes across gender. The mean difference in incomes varies across races quite significantly with difference being lowest amongst Blacks and highest amongst Mixed races. This could be attributed to the fact there are strong policy measures in interests of Blacks to protect their rights.
+
+
+###Education
+
+We will now analyse various sub factors associated with education that may affect difference in mean income.
+
+```{r}
+
+# compare mean, median, income ratio across gender based on college.type
+
+gap.college.type <- with(nlsy, aggregate(income ~ gender + college.type, na.rm = T, FUN = mean))
+
+dcast(gap.college.type, gender ~ college.type, value.var="income")
+
+gap <- ddply(nlsy, ~ college.type, summarize, 
+          mean.gap = mean(income[gender == "male"], na.rm = TRUE) - mean(income[gender == "female"], na.rm = T),
+          median.gap = median(income[gender == "male"], na.rm = TRUE) - median(income[gender == "female"], na.rm = T),
+          mean.ratio = round(mean(income[gender == "female"], na.rm = TRUE)/mean(income[gender == "male"],na.rm = TRUE),2)
+      )
+
+gap
+
+ggplot(data = gap, aes(y = mean.gap, x = college.type, fill = college.type)) +
+  geom_bar(stat = "identity") +
+  ylab("Mean Difference") + 
+  xlab("College Type") +
+  ggtitle("Mean income difference across College Type") +
+  guides(fill = guide_legend(title = "College Type")) + 
+  theme(text = element_text(size=10), axis.text.x = element_text(angle=90, vjust = 1))
+
+
+ggplot(nlsy, aes(gender, income)) + 
+  geom_boxplot(aes(fill = gender)) + facet_grid(.~college.type) +
+  theme(text = element_text(size=10), axis.text.x = element_text(angle=90, vjust = 1))
+
+```
+
+**Takeaway** From the data and graphs, it appears that mean difference in income exists but stays uniform inrrespective of the type of college one may attended. Interestingly there is a spike observed for Private not-for-profit institution. It could be attributed to the type of courses and jobs that women may target post the completion of their courses, however, only the by the graphs they stand unexplained.
+
+
+```{r}
+# compare mean, median, income ratio across gender based on enroll.status
+
+
+ddply(nlsy, ~ enroll.status, summarize, 
+          mean.gap = mean(income[gender == "male"], na.rm = TRUE) - mean(income[gender == "female"], na.rm = T),
+          median.gap = median(income[gender == "male"], na.rm = TRUE) - median(income[gender == "female"], na.rm = T),
+          mean.ratio = round(mean(income[gender == "female"], na.rm = TRUE)/mean(income[gender == "male"],na.rm = TRUE),2)
+      )
+
+
+```
+
+**Takeaway** Enrollment status does not yield much information and clearly is not a good indicator for wage gap analysis.
+
+###Type of jobs held as adult
+
+```{r}
+
+# compare mean, median, income ratio across gender based on job.type.adult
+
+gap.job.type.adult <- with(nlsy, aggregate(income ~ gender + job.type.adult, na.rm = T, FUN = mean))
+dcast(gap.job.type.adult, gender ~ job.type.adult, value.var="income")
+
+gap <- ddply(nlsy, ~ job.type.adult, summarize, 
+          mean.gap = mean(income[gender == "male"], na.rm = TRUE) - mean(income[gender == "female"], na.rm = T),
+          median.gap = median(income[gender == "male"], na.rm = TRUE) - median(income[gender == "female"], na.rm = T),
+          mean.ratio = round(mean(income[gender == "female"], na.rm = TRUE)/mean(income[gender == "male"],na.rm = TRUE),2)
+      )
+
+
+gap
+
+ggplot(data = gap, aes(y = mean.gap, x = job.type.adult, fill = job.type.adult)) +
+  geom_bar(stat = "identity") +
+  ylab("Mean Difference") + 
+  xlab("Type of jobs held") +
+  ggtitle("Mean income difference across type of jobs held") +
+  guides(fill = guide_legend(title = "Type of jobs held")) + 
+  theme(text = element_text(size=10), axis.text.x = element_text(angle=90, vjust = 1))
+
+
+ggplot(nlsy, aes(x=job.type.adult, y=income, shape=gender, color=gender)) + 
+  geom_point() + # Adds points (scatterplot)
+  geom_smooth(method = "lm") + # Adds regression lines
+  ylab("Income") + # Changes y-axis label
+  xlab("Type of jobs held") + # Changes x-axis label
+  ggtitle("Income across Type of jobs held") # Changes plot title
+
+
+```
+
+**Takeaway** From the data and table, it appears that the mean difference tends to decrease as number of different type of jobs increase amongst men and women. The fitted line plot however, indicates an interesting trend that as men hold more number of jobs, their income fall much more steeply than women. This could be due to the presence of outliers in the data as we seen in the graph which causes a sudden change in the slope.
+
+More number of different type of jobs can be attributed to different odd jobs or secondary jobs that individual may take. Steady jobs usually pay more than secondary jobs and thus we see a fall in income.
+
+
+###Spouse
+
+We will now analyse and discuss factors associated with the income details of an individual's spouse and whether it attributes to difference in mean incomes.
+
+```{r}
+
+# compare mean, median, income ratio across gender based on is.spouse.income.past.year
+
+gap.is.spouse.income.past.year <- with(nlsy, aggregate(income ~ gender + is.spouse.income.past.year, na.rm = T, FUN = mean))
+dcast(gap.is.spouse.income.past.year, gender ~ is.spouse.income.past.year, value.var="income")
+
+gap <- ddply(nlsy, ~ is.spouse.income.past.year, summarize, 
+          mean.gap = mean(income[gender == "male"], na.rm = TRUE) - mean(income[gender == "female"], na.rm = T),
+          median.gap = median(income[gender == "male"], na.rm = TRUE) - median(income[gender == "female"], na.rm = T),
+          mean.ratio = round(mean(income[gender == "female"], na.rm = TRUE)/mean(income[gender == "male"],na.rm = TRUE),2)
+      )
+
+gap
+
+ggplot(data = gap, aes(y = mean.gap, x = is.spouse.income.past.year, fill = is.spouse.income.past.year)) +
+  geom_bar(stat = "identity") +
+  ylab("Mean Difference") + 
+  xlab("If spouse earned") +
+  ggtitle("Mean income difference if spouse earned") +
+  guides(fill = guide_legend(title = "If spouse earned")) + 
+  theme(text = element_text(size=10), axis.text.x = element_text(angle=90, vjust = 1))
+
+
+ggplot(nlsy, aes(gender, income)) + 
+  geom_boxplot(aes(fill = gender)) + facet_grid(.~is.spouse.income.past.year) +
+  theme(text = element_text(size=10), axis.text.x = element_text(angle=90, vjust = 1))
+
+```
+
+**Takeaway** Both the data and graph suggest significant difference in mean income when spouse of the individual received income last year. The mean difference in income was much higher when the spouse of individual did not receive income. This is expected when observed in daily life. In case of a woman, when her spouse is not working indicate financial problems and she is expected to take odd jobs or secondary jobs which are in general considered to be low paying jobs. Men in general can get skill based jobs irrespective of whether their spouses are working or not.
+
+
+
+```{r}
+
+# compare mean, median, income ratio across gender based on spouse.income.last.year
+
+
+ggplot(nlsy, aes(x=spouse.income.last.year, y=income, shape=gender, color=gender)) + 
+  geom_point() + # Adds points (scatterplot)
+  geom_smooth(method = "lm") + # Adds regression lines
+  ylab("Income") + # Changes y-axis label
+  xlab("Spouse Income") + # Changes x-axis label
+  ggtitle("Income across Spouse Income") # Changes plot title
+
+
+```
+
+If we plot a fitted line graph of income across gender based on income of spouse, we observe that in general income of both men and and women tend to increase and there is a positive correlation. But, there is an indication of a clear divide between the income of men and women as the slope don't over lap at any point.
+
+###Family
+
+We will now discuss and analyse factors attributed to difference in mean income by family related variables.
+
+```{r}
+
+# compare mean, median, income ratio across gender based on household.size
+
+gap.household.size <- with(nlsy, aggregate(income ~ gender + household.size, na.rm = T, FUN = mean))
+dcast(gap.household.size, gender ~ household.size, value.var="income")
+
+gap <- ddply(nlsy, ~ household.size, summarize, 
+          mean.gap = mean(income[gender == "male"], na.rm = TRUE) - mean(income[gender == "female"], na.rm = T),
+          median.gap = median(income[gender == "male"], na.rm = TRUE) - median(income[gender == "female"], na.rm = T),
+          mean.ratio = round(mean(income[gender == "female"], na.rm = TRUE)/mean(income[gender == "male"],na.rm = TRUE),2)
+      )
+
+gap
+
+ggplot(data = gap, aes(y = mean.gap, x = household.size, fill = household.size)) +
+  geom_bar(stat = "identity") +
+  ylab("Mean Difference") + 
+  xlab("Household Size") +
+  ggtitle("Mean income difference across Household Size") +
+  guides(fill = guide_legend(title = "Household Size")) + 
+  theme(text = element_text(size=10), axis.text.x = element_text(angle=90, vjust = 1))
+
+
+ggplot(nlsy, aes(x=household.size, y=income, shape=gender, color=gender)) + 
+  geom_point() + # Adds points (scatterplot)
+  geom_smooth(method = "lm") + # Adds regression lines
+  ylab("Income") + # Changes y-axis label
+  xlab("Household Size") + # Changes x-axis label
+  ggtitle("Income across Household Size") # Changes plot title
+
+
+```
+
+**Takeaway** House hold size is a strong indicator in the sense that as the household size increased women tend to focus more on taking care of household work and may or may not choose to work depending upon the size of the family. This is strongly supported by our data and graphs that suggest as the number of family members increase, the amount of money earned by women per $1 earned by men decreased progressively.
+
+Fitted line plot of income against household size showcase that the slope of income for women increases sharply as the household size increases.
+
+
+Plotting graphs and tables for members under age 6
+```{r}
+
+# hh.member.under6
+gap.hh.member.under6 <- with(nlsy, aggregate(income ~ gender + hh.member.under6, na.rm = T, FUN = mean))
+dcast(gap.hh.member.under6, gender ~ hh.member.under6, value.var="income")
+
+gap <- ddply(nlsy, ~ hh.member.under6, summarize, 
+          mean.gap = mean(income[gender == "male"], na.rm = TRUE) - mean(income[gender == "female"], na.rm = T),
+          median.gap = median(income[gender == "male"], na.rm = TRUE) - median(income[gender == "female"], na.rm = T),
+          mean.ratio = round(mean(income[gender == "female"], na.rm = TRUE)/mean(income[gender == "male"],na.rm = TRUE),2)
+      )
+
+gap
+
+ggplot(data = gap, aes(y = mean.gap, x = hh.member.under6, fill = hh.member.under6)) +
+  geom_bar(stat = "identity") +
+  ylab("Mean Difference") + 
+  xlab("Members under age 6") +
+  ggtitle("Mean income difference for Members under age 6") +
+  guides(fill = guide_legend(title = "Members under age 6")) + 
+  theme(text = element_text(size=10), axis.text.x = element_text(angle=90, vjust = 1))
+
+
+ggplot(nlsy, aes(gender, income)) + 
+  geom_boxplot(aes(fill = gender)) + facet_grid(.~hh.member.under6) +
+  theme(text = element_text(size=10), axis.text.x = element_text(angle=90, vjust = 1))
+
+```
+
+
+Plotting tables and graphs for members under age 18
+```{r}
+##"hh.member.under18", 
+
+
+gap.hh.member.under18 <- with(nlsy, aggregate(income ~ gender + hh.member.under18, na.rm = T, FUN = mean))
+dcast(gap.hh.member.under18, gender ~ hh.member.under18, value.var="income")
+
+gap <- ddply(nlsy, ~ hh.member.under18, summarize, 
+          mean.gap = mean(income[gender == "male"], na.rm = TRUE) - mean(income[gender == "female"], na.rm = T),
+          median.gap = median(income[gender == "male"], na.rm = TRUE) - median(income[gender == "female"], na.rm = T),
+          mean.ratio = round(mean(income[gender == "female"], na.rm = TRUE)/mean(income[gender == "male"],na.rm = TRUE),2)
+      )
+
+gap
+
+ggplot(data = gap, aes(y = mean.gap, x = hh.member.under18, fill = hh.member.under18)) +
+  geom_bar(stat = "identity") +
+  ylab("Mean Difference") + 
+  xlab("Members under age 18") +
+  ggtitle("Mean income difference for Members under age 18") +
+  guides(fill = guide_legend(title = "Members under age 18")) + 
+  theme(text = element_text(size=10), axis.text.x = element_text(angle=90, vjust = 1))
+
+
+```
+
+**Takeaway** In both the cases, we observed a similar trend where as the number of members increase, the difference in mean income also increases. This is strongly supported by data given the fact that when there number of members under age 6 or 18 were 0, then mean income of women almost equated with mean income of men and in case of members under 18, women's mean income exceeded that of men. This could be attributed to the fact that members under age 6 demand more attention and care than members under age 18.
+
+
+Before we start building our model, let's analyse if our income data is normal.
+
+For Women
+
+```{r}
+
+# is data normal for female
+
+# qq plot
+with(nlsy, qqnorm(income[gender=="female"]))
+# add reference line
+with(nlsy, qqline(income[gender=="female"], col = "blue"))
+
+```
+
+For Men
+```{r}
+# is data normal for males
+
+# qq plot
+with(nlsy, qqnorm(income[gender=="male"]))
+# add reference line
+with(nlsy, qqline(income[gender=="male"], col = "blue"))
+
+
+```
+
+**Takeaway** - From the Normal Q-Q plots, it appears that distribution for men income data is much better than distribution for women income data, but still there is a degree of high variation in the both the distributions.
+
+Our starting point of the regression model to regress income against gender. This type of modelling is simple linear regression. We will keep this model as a baseline reference to check statistical significance of each variable as we add in the model.
+```{r}
+
+# starting point
+options(scipen = 5)
+
+nlsy.lm <- lm(income ~ gender,
+              data = nlsy)
+
+
+summary(nlsy.lm)
+
+c("R-Squared" = summary(nlsy.lm)$r.squared, "Residual Standard Error" = summary(nlsy.lm)$sigma, 
+  "F-Statistic" = summary(nlsy.lm)$fstatistic[1])
+
+```
+
+The output that we see above is of a simple linear model income regressed against gender. The model gives a general interpretation that men tends to earn approximately $5700 more than women. We do not see data of women since they have been added to the baseline. P-value of gender suggests that it is highly significant with significance level of 0.001 and is a good choice of predictor variable.
+
+Let's run some diagnostic plots the new model.
+```{r}
+plot(nlsy.lm)
+
+```
+
+
+These four plots are important diagnostic tools in assessing whether the linear model is appropriate. The first two plots are the most important, but the last two can also help with identifying outliers and non-linearities.
+
+Residuals vs. Fitted When a linear model is appropriate, we expect
+
+the residuals will have constant variance when plotted against fitted values; and
+
+the residuals and fitted values will be uncorrelated.
+
+If there are clear trends in the residual plot, or the plot looks like a funnel, these are clear indicators that the given linear model is inappropriate.
+
+Normal QQ plot You can use a linear model for prediction even if the underlying normality assumptions don't hold. However, in order for the p-values to be believable, the residuals from the regression must look approximately normally distributed.
+
+Scale-location plot This is another version of the residuals vs fitted plot. There should be no discernible trends in this plot.
+
+Residuals vs Leverage. Leverage is a measure of how much an observation influenced the model fit. It's a one-number summary of how different the model fit would be if the given observation was excluded, compared to the model fit where the observation is included. Points with high residual (poorly described by the model) and high leverage (high influence on model fit) are outliers. They're skewing the model fit away from the rest of the data, and don't really seem to fit with the rest of the data.
+
+**Takeaway** The model designed above is a good model as we don't see visible trends in any of the 4 plots.
+
+Now let's create a model using the variables that we have analysed.
+
+```{r}
+
+nlsy.lm.final <- lm(income ~ gender +
+                         industry
+                        + age
+                        + race
+                        + college.type
+                        + enroll.status
+                        + job.type.adult
+                        + is.spouse.income.past.year
+                        #+ spouse.income.last.year
+                        + household.size
+                        + hh.member.under6
+                        + hh.member.under18,
+              data = nlsy)
+
+
+c("R-Squared" = summary(nlsy.lm.final)$r.squared, "Residual Standard Error" = summary(nlsy.lm.final)$sigma, 
+  "F-Statistic" = summary(nlsy.lm.final)$fstatistic[1])
+
+anova(nlsy.lm, nlsy.lm.final)
+
+```
+
+**Takeaway** If we comapre the above two models, F-statistic and residual errors in the new model have reduced significantly, which is an indication that certainly the new model is a better fit. This is confirmed we observe the p-value from anova test. p-value suggest that it is statistically significant and we should keep the new model.
+
+Let's run the diagnostic plot again on the new model
+
+```{r}
+
+plot(nlsy.lm.final)
+
+```
+
+
+As opposed to our finidings using anova test, we notice visible trends in residuals versus fitted plot and normal qq plot, indicating unexplained residuals or errors in our new model.
+
+If you look at this plot, you'll see that there's a clear "funneling" phenomenon. The distribution of the residuals is quite well concentrated around 10000 for small fitted values, but they get more and more spread out as the fitted values increase. This is an instance of "increasing variance". The standard linear regression assumption is that the variance is constant across the entire range. When this assumption isn't valid, such as in this example, we shouldn't believe our confidence intervals, prediction bands, or the p-values in our regression.
+
+Recall from our previous section that we obtained interesting findings from the variables is.spouse.income.past.year, race, household.size. Let's generate interaction terms with respect to gender from the terms.
+
+
+```{r}
+
+anova(nlsy.lm.final, update(nlsy.lm.final, . ~ . + is.spouse.income.past.year*gender + race*gender + household.size*gender))
+
+nlsy.lm.final <- lm(income ~ gender +
+                         industry
+                        + age
+                        + race
+                        + college.type
+                        + enroll.status
+                        + job.type.adult
+                        + is.spouse.income.past.year
+                        + household.size +
+                        is.spouse.income.past.year*gender + race*gender + household.size*gender
+                        + hh.member.under6
+                        + hh.member.under18,
+              data = nlsy)
+
+c("R-Squared" = summary(nlsy.lm.final)$r.squared, "Residual Standard Error" = summary(nlsy.lm.final)$sigma, 
+  "F-Statistic" = summary(nlsy.lm.final)$fstatistic[1])
+
+kable(coef(summary(nlsy.lm.final)), digits = c(0, 0, 2, 4))
+
+
+```
+
+The new model turns out to be still significant with Residual errors reduced to 17362.5565 and F-statistic reduced to 25.3411. P-value is statistically significant indicating a better model. The new model will be our final mode as we have incorporated all the significant variables and interaction terms within the scope of given dataset.
+
+
+# 4. Discussion
+
+For our concluding segment, let's run the diagnostic plot of our final selected model again.
+
+```{r}
+
+
+plot(nlsy.lm.final)
+
+```
+
+We observe that one of the tail in normal qq plot falls back to the line giving an indication of a better fit. The residual vs fitted plot is less condense as compared to the previous model, however the funnel shape still exists.
+
+One of the potential limitations in our model selection was that susbet of missing values taken out from the data set reduced the set of data points to a considerable extent. For a model to be a good fit, it is imperative to have large sample sizes that can better explain the variations.
+
+Variables in our model such as enrollment status, mumbers under the age 6 and members under the 18 appear to be statistically insignificant variable, although in our initial discussion, they had interesting statistics to display. However, in presence of different variable, their affect becomes insignificant.
+
+is.spouse.income.past.year although appears as an statistically insignificant, but, as a part part of interaction model along with gender appear to hold statstical significance.
+
+Also, I found several contributing factors like positions, number of working hours and incomes from previous years are missing from the data set. These factors tend to be highly influential when it comes to gender wage gap analysis.
+
+In general I feel that our model may not be the best model, but to a some degree of confidence, it can explain the difference in income across gender keep other variables constant. The model is good for a surface level analysis, but is certainly not equiped to be presented to policy makers in making decisions considering high number of missing values and insufficient contributing variables available in the data set.
+
+Based on the analysis performed, I do feel that wage gap **still exists** based on the survey data, however the extent doesn't equate to proportions as it is touted to be due to contributing factors like choice of jobs, whether spouse works or not, gravitates more towards the alternate theory.
+
+
+
+

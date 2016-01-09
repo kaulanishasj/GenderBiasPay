@@ -68,7 +68,7 @@ Since, we cannot analyse all the data, our population data set can consist of on
 - college.type
 
 ```{r}
-multivariate.list <- c("gender", "household.size", "race", "spouse.income.last.year", "industry", "income", "gross.family.income", "college.type")
+multivariate.list <- c("gender", "household.size", "race", "spouse.income.last.year", "industry", "income", "gross.family.income", "college.type", "bdate.year")
 
 survey.data <- subset(survey.data, select=multivariate.list)
 
@@ -145,16 +145,71 @@ So, going with the first option:
 ```{r}
 negative.to.na <- c("household.size", "spouse.income.last.year", "gross.family.income", "income")
 for(i in 1:length(negative.to.na)){
-  survey.data[["household.size"]][which(survey.data[["household.size"]] < 0)] <- NA
+  variate <- negative.to.na[i]
+  survey.data[[variate]][which(survey.data[[variate]] < 0)] <- NA
 }
+```
+
+### Top-Coded Values
+
+Top-Coded values can be dangerous or not so depending how we utilize them. Top Coded data, obviously skews the top layer of data, because then we do not have information about the top values of the variate. But, within those variables that are top-coded, we can find the distribution for our research. We can find, of those who are top coded for that variate, how many of those observations belonged to female and male.
+
+Analyzing the Top-Coded data of each variate we find the following:
+
+```{r}
+  top.coded.variates <- c("spouse.income.last.year", "gross.family.income", "income")
+
+  for(i in 1:length(top.coded.variates)){
+    variate <- top.coded.variates[i]
+    temp_data <- survey.data[!is.na(survey.data[[variate]]), ]
+    topcoded.temp.data <- temp_data[temp_data[[variate]] == quantile(temp_data[[variate]], probs = c(0.98), na.rm = TRUE),]
+    summary.top <- summary(topcoded.temp.data[[variate]])
+    print(variate)
+    print(summary.top)
+  }
+```
+
+From the tables we can see that for each of the variates "spouse.income.last.year", "gross.family.income", and "income", they have been top coded to $163800, $316600, and $146000 respectively. 
+
+Now that we have the top coded data of income, lets analyze how is ditributed within the genders
+
+```{r}
+  library(ggplot2)
+
+  topcoded.temp.data <- temp_data[temp_data$income == quantile(temp_data$income, probs = c(0.98), na.rm = TRUE),]
+
+ tapply(topcoded.temp.data$income, topcoded.temp.data$gender, sum)
+
+ with(survey.data, plot(gender, income, 
+                   main = "Income by Gender", 
+                   xlab = "Gender", 
+                   ylab = "Income($)"))
+ 
 ```
 
 
 
-### Top-Coded Values
-
-Top-Coded values can be dangerous or not so depending how we utilize them. Top Coded data, obviously skews the top layer of data, because then we do not have information about the top values of the variate
 
 
+```{r}
+ survey.data <- transform(survey.data, age = 1997 - survey.data$bdate.year)
+ 
+ 
+  ggplot(birthwt, aes(x=mother.age, y=birthwt.grams, shape=mother.smokes, color=mother.smokes)) + 
+  geom_point() + # Adds points (scatterplot)
+  geom_smooth(method = "lm") + # Adds regression lines
+  ylab("Birth Weight (grams)") + # Changes y-axis label
+  xlab("Mother's Age (years)") + # Changes x-axis label
+  ggtitle("Birth Weight by Mother's Age") # Changes plot title
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+```
 
 
